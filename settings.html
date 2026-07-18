@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Intentio — Settings</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 4vh 0.5in;
+        padding: 2rem 0;
+        background: #f9f9f9;
+        color: #1a1a1a;
+      }
+      h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+      .subtitle { color: #666; font-size: 0.9rem; margin: 0 0 2rem; max-width: 800px; }
+
+      /* section headers */
+      h2 { font-size: 1rem; font-weight: 600; margin: 2rem 0 0.25rem; border-top: 1px solid #ddd; padding-top: 1.5rem; }
+      .section-desc { color: #666; font-size: 0.85rem; margin: 0 0 1rem; max-width: 800px; }
+
+      /* question rows */
+      .question-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
+      }
+      .config-row {
+        flex-basis: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+      .config-row select {
+        max-width: 100%;
+      }
+
+      /* condition chips ("Show only if" checkboxes) */
+      .condition-row {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .condition-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        color: #555;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .condition-chip:has(input:checked) { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+      .condition-chip.yes:has(input:checked) { background: #dcfce7; border-color: #86efac; color: #15803d; }
+      .condition-chip.no:has(input:checked) { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+
+      /* question numbering */
+      .q-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        background: #e5e7eb;
+        color: #444;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      /* questions nested under their trigger (conditional visibility) */
+      .branch-wrapper {
+        display: flex;
+        align-items: stretch;
+        margin-left: 1.25rem;
+        margin-bottom: 0.6rem;
+      }
+      .branch-wrapper .question-row {
+        flex: 1;
+        margin-bottom: 0;
+      }
+      .branch-connector {
+        width: 1.75rem;
+        flex-shrink: 0;
+        position: relative;
+        display: flex;
+        justify-content: center;
+      }
+      .branch-connector::before {
+        content: "";
+        position: absolute;
+        top: -0.6rem;
+        bottom: 50%;
+        left: 50%;
+        width: 2px;
+        background: #ccc;
+      }
+      .branch-label {
+        align-self: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border-radius: 50%;
+        width: 1.4rem;
+        height: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+      }
+      .branch-label.yes { background: #dcfce7; color: #15803d; }
+      .branch-label.no { background: #fee2e2; color: #b91c1c; }
+      .branch-label.answered { background: #dbeafe; color: #1d4ed8; }
+      .question-row input[type="text"] {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 0.95rem;
+        font-family: inherit;
+        background: transparent;
+        color: #1a1a1a;
+      }
+      .question-row select {
+        font-size: 0.85rem;
+        font-family: inherit;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 0.2rem 0.4rem;
+        background: #fff;
+        color: #444;
+        cursor: pointer;
+      }
+      .question-row input.log-name-input {
+        flex: 0 0 7rem;
+        font-size: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 0.2rem 0.4rem;
+        background: #fff;
+        color: #555;
+      }
+      .config-row input.branch-name-input {
+        flex: 0 1 11rem;
+        font-size: 0.8rem;
+        font-family: inherit;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 0.25rem 0.5rem;
+        background: #fff;
+        color: #333;
+      }
+      .reorder-btn, .delete-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        color: #888;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+      }
+      .reorder-btn:hover { color: #333; background: #f0f0f0; }
+      .delete-btn:hover  { color: #dc2626; background: #fef2f2; }
+      .delete-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+      /* add question button */
+      .add-btn {
+        margin-top: 0.5rem;
+        padding: 0.4rem 0.9rem;
+        font-size: 0.9rem;
+        font-family: inherit;
+        cursor: pointer;
+        border: 1px dashed #aaa;
+        border-radius: 4px;
+        background: #fff;
+        color: #555;
+      }
+      .add-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+
+      /* ── Questions: List/Tree tabs ──────────────────────────── */
+      .tab-bar { display: flex; gap: 0.25rem; margin-bottom: 0.75rem; }
+      .tab-btn {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.85rem;
+        font-family: inherit;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #eee;
+        color: #666;
+      }
+      .tab-btn.active { background: #fff; color: #1a1a1a; font-weight: 600; border-color: #ccc; }
+
+      /* ── Tree view: flowchart ───────────────────────────────── */
+      #tree-view {
+        position: relative;
+        overflow: auto;
+        background: #eef0f2;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 2rem 1.5rem;
+        min-height: 200px;
+      }
+      .flow-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        justify-content: center;
+        align-items: flex-start;
+        margin-bottom: 3rem; /* room for arrows down to the next row */
+        position: relative; /* stacking context so rows paint above the arrow overlay */
+        z-index: 1;
+      }
+      .flow-row:last-child { margin-bottom: 0; }
+      .flow-node-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .flow-node {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+        cursor: grab;
+        min-width: 6rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        user-select: none;
+      }
+      .flow-node:hover { border-color: #2563eb; }
+      .flow-node.selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25); }
+
+      .flow-add-slot {
+        background: #fff;
+        border: 2px dashed #bbb;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        color: #888;
+        cursor: pointer;
+        min-width: 4rem;
+        text-align: center;
+      }
+      .flow-add-slot.yes { border-color: #86efac; color: #15803d; }
+      .flow-add-slot.no { border-color: #fca5a5; color: #b91c1c; }
+      .flow-add-slot.answered { border-color: #93c5fd; color: #1d4ed8; }
+      .flow-add-slot:hover { background: #eff6ff; border-color: #2563eb; color: #2563eb; }
+      .flow-add-slot.drag-over { outline: 2px dashed #2563eb; outline-offset: 2px; }
+
+      .flow-detail {
+        width: max-content;
+        max-width: 34rem;
+      }
+
+      svg.tree-arrows {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: visible;
+      }
+
+      /* whitelist tags */
+      .domain-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+      .domain-tag {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 999px;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.875rem;
+        color: #333;
+      }
+      .domain-tag button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #999;
+        font-size: 1rem;
+        line-height: 1;
+        padding: 0;
+      }
+      .domain-tag button:hover { color: #dc2626; }
+
+      /* add domain row */
+      .add-domain-row { display: flex; gap: 0.5rem; }
+      .add-domain-row input {
+        flex: 1;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.9rem;
+        font-family: inherit;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+      }
+      .add-domain-row input:focus { outline: none; border-color: #2563eb; }
+      .add-domain-row button {
+        padding: 0.45rem 1rem;
+        font-size: 0.9rem;
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        background: #e5e7eb;
+        color: #333;
+      }
+      .add-domain-row button:hover { background: #d1d5db; }
+
+      /* save button */
+      .save-row { margin-top: 2rem; display: flex; align-items: center; gap: 1rem; }
+      #save-btn {
+        padding: 0.6rem 1.6rem;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        background: #2563eb;
+        color: #fff;
+      }
+      #save-btn:hover { background: #1d4ed8; }
+      #save-status { font-size: 0.875rem; color: #16a34a; display: none; }
+
+      /* backup & restore buttons */
+      .secondary-btn {
+        padding: 0.45rem 1rem;
+        font-size: 0.9rem;
+        font-family: inherit;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
+        color: #333;
+      }
+      .secondary-btn:hover { background: #f0f0f0; }
+
+      /* nav links */
+      .nav { margin-bottom: 1.5rem; font-size: 0.875rem; }
+      .nav a { color: #2563eb; text-decoration: none; margin-right: 1rem; }
+      .nav a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <a id="log-link" href="#">View log</a>
+    </div>
+    <h1>Settings</h1>
+    <p class="subtitle">Changes take effect immediately after saving — no reload needed.</p>
+
+    <h2>Questions</h2>
+    <p class="section-desc">Shown on every interrupt. The "Log name" field sets a short column header for the log (defaults to the question text). "Split log here" (Yes/No questions only) breaks the log view into separate tables by the answer to this question — check it on more than one question to split by every combination actually seen. "Hide from log" drops a question's column from the log view entirely.</p>
+    <p class="section-desc"><strong>Flowchart</strong>: shows how questions branch off each other by their Yes/No answers, using log names. Click a question to view/edit its details. Use the "+" at the end of a branch to add a question there, or drag a question onto a "+" to move it there instead — check more than one "Show only if" box in a question's details to have it converge from multiple branches. <strong>List</strong>: a simpler flat view — drag to reorder, or use the arrows.</p>
+    <div class="tab-bar">
+      <button type="button" class="tab-btn" id="tab-tree-btn">Flowchart</button>
+      <button type="button" class="tab-btn" id="tab-list-btn">List</button>
+    </div>
+    <div id="tree-view"></div>
+    <div id="question-list" style="display: none;"></div>
+    <button class="add-btn" id="add-question-btn">+ Add question</button>
+
+    <h2>Interrupt Page</h2>
+    <p class="section-desc">Controls what's shown on the interrupt page.</p>
+    <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.9rem; cursor:pointer;">
+      <input type="checkbox" id="allow-timer-followups-checkbox" />
+      Allow timer follow-up questions (e.g. "Skip this tab/site for a while")
+    </label>
+    <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.9rem; margin-top:0.75rem;">
+      Re-interrupt a tab after it's sat idle for
+      <input type="number" id="focus-timeout-input" min="1" step="1" style="width:4.5rem; padding:0.3rem 0.5rem; font-size:0.9rem; font-family:inherit; border:1px solid #ccc; border-radius:4px;" />
+      minutes
+    </label>
+
+    <h2>Always Allowed Sites</h2>
+    <p class="section-desc">These sites are never interrupted. Enter domain names (e.g. <code>example.com</code>), or a <code>file://</code> path to a folder (ending in <code>/</code>) or file to whitelist local files.</p>
+    <div class="domain-list" id="domain-list"></div>
+    <div class="add-domain-row">
+      <input type="text" id="domain-input" placeholder="example.com" />
+      <button id="add-domain-btn">Add</button>
+    </div>
+
+    <h2>Backup &amp; Restore</h2>
+    <p class="section-desc">Save your questions, always-allowed sites, and redirect log to a file on disk, or restore them from a previous backup. Use this before reinstalling/reunpacking the extension, or to transfer your setup to a different browser profile or device.</p>
+    <div class="save-row" style="margin-top: 0;">
+      <button class="secondary-btn" id="export-btn">Export to file</button>
+      <button class="secondary-btn" id="import-btn">Import from file</button>
+      <input type="file" id="import-file-input" accept="application/json" style="display: none;" />
+    </div>
+
+    <div class="save-row">
+      <button id="save-btn">Save changes</button>
+      <span id="save-status">Saved!</span>
+    </div>
+
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

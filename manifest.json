@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Intentio",
+  "version": "0.1.0",
+  "description": "ADHD focus tool — interrupt before distraction.",
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "declarativeNetRequestFeedback",
+    "storage",
+    "tabs",
+    "webNavigation",
+    "alarms"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "web_accessible_resources": [
+    {
+      "resources": ["interrupt.html", "interrupt.js", "log.html", "log.js", "settings.html", "settings.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "options_page": "settings.html"
+}
