@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Intentio — Privacy Policy</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 720px;
+        margin: 6vh auto;
+        padding: 0 2rem;
+        background: #f9f9f9;
+        color: #1a1a1a;
+        line-height: 1.6;
+      }
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.1rem; margin-top: 2rem; }
+      .updated { color: #666; font-size: 0.9rem; }
+      code {
+        background: #eee;
+        padding: 0.1rem 0.35rem;
+        border-radius: 3px;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Intentio — Privacy Policy</h1>
+    <p class="updated">Last updated: 2026-07-26</p>
+
+    <p>
+      Intentio is a browser extension that interrupts navigation to sites
+      you haven't explicitly allowed, prompting you to briefly re-anchor on
+      what you're trying to do before continuing. This page explains what
+      data the extension touches and what it does with it.
+    </p>
+
+    <h2>What Intentio accesses, and why</h2>
+    <p>
+      To decide whether a page you're navigating to should be interrupted,
+      Intentio needs to see the destination URL of your browser
+      navigations. This requires broad host access
+      (<code>&lt;all_urls&gt;</code>) and the <code>tabs</code>,
+      <code>webNavigation</code>, and <code>declarativeNetRequest</code>
+      permissions. Intentio only <em>reads</em> the URL to compare it
+      against your configured allow-list — it does not read page content,
+      form data, or anything you type into other sites.
+    </p>
+
+    <h2>What Intentio stores, and where</h2>
+    <p>
+      Everything Intentio stores — your questions and their branching
+      configuration, your always-allowed sites list, the redirect/answer
+      log, pause history, and view preferences — is kept entirely in your
+      browser's local extension storage (<code>chrome.storage.local</code>
+      and <code>chrome.storage.session</code>), on your own device.
+    </p>
+
+    <h2>What Intentio does <em>not</em> do</h2>
+    <ul>
+      <li>It does not send any data to a server. Intentio has no backend.</li>
+      <li>It does not use analytics, telemetry, or crash reporting.</li>
+      <li>It does not sell, share, or transmit your browsing activity to
+        any third party.</li>
+      <li>It does not use the data it stores for advertising or any purpose
+        other than running the extension's own interrupt/logging features.</li>
+    </ul>
+
+    <h2>Your control over this data</h2>
+    <p>
+      You can view, edit, and clear your questions, allow-list, and log at
+      any time from the extension's own Settings and Log pages. You can
+      export all of it to a file, or delete it, whenever you like.
+      Uninstalling the extension removes all of its locally stored data.
+    </p>
+
+    <h2>Changes to this policy</h2>
+    <p>
+      If this policy changes, the "Last updated" date above will change
+      accordingly.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about this policy can be sent to: <code>[your contact email]</code>
+    </p>
+  </body>
+</html>
