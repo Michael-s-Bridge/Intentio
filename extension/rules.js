@@ -126,6 +126,30 @@ export function registerTempAllow({ scope, hostname, tabId }) {
   });
 }
 
+// Allows every main-frame navigation through, everywhere, until the pause
+// ends — used by the Settings page's "Pause Intentio" button. Priority 4 is
+// above every other rule (allow-once is 3, temp-allow/whitelist entries are
+// 2, the catch-all block is 1), so it overrides all of them while active.
+export function registerPauseAllow() {
+  return new Promise((resolve, reject) => {
+    chrome.declarativeNetRequest.getSessionRules((existing) => {
+      const rule = {
+        id: nextSessionRuleId(existing),
+        priority: 4,
+        action: { type: "allow" },
+        condition: { resourceTypes: ["main_frame"] },
+      };
+      chrome.declarativeNetRequest.updateSessionRules({ addRules: [rule] }, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(rule.id);
+        }
+      });
+    });
+  });
+}
+
 // Removes a single session rule by ID (used when a temporary-allow grant expires).
 export function removeSessionRule(id) {
   return new Promise((resolve) => {

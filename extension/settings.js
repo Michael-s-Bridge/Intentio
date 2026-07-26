@@ -864,6 +864,52 @@ document.getElementById("save-btn").addEventListener("click", async () => {
   setTimeout(() => { status.style.display = "none"; }, 2000);
 });
 
+// ── Pause Intentio ──────────────────────────────────────────────
+
+// Refreshes the active-pause banner from the service worker's current
+// state — called on load, and after starting/ending a pause.
+async function refreshPauseStatus() {
+  const status = await chrome.runtime.sendMessage({ type: "GET_PAUSE_STATUS" });
+  const box = document.getElementById("pause-active-status");
+
+  if (!status?.active) {
+    box.style.display = "none";
+    return;
+  }
+
+  const until = new Date(status.until).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  document.getElementById("pause-active-text").textContent = `Paused until ${until} — "${status.reason}"`;
+  box.style.display = "flex";
+}
+
+document.getElementById("pause-btn").addEventListener("click", async () => {
+  const minutes = parseInt(document.getElementById("pause-minutes-input").value, 10);
+  const reason = document.getElementById("pause-reason-input").value.trim();
+
+  if (!Number.isFinite(minutes) || minutes < 1) {
+    alert("Enter a number of minutes, 1 or greater.");
+    return;
+  }
+  if (!reason) {
+    alert("Enter a reason for pausing — it's saved to the log.");
+    return;
+  }
+
+  const response = await chrome.runtime.sendMessage({ type: "PAUSE_INTENTIO", minutes, reason });
+  if (!response?.ok) {
+    alert("Couldn't start the pause. Try again.");
+    return;
+  }
+
+  document.getElementById("pause-reason-input").value = "";
+  refreshPauseStatus();
+});
+
+document.getElementById("resume-btn").addEventListener("click", async () => {
+  await chrome.runtime.sendMessage({ type: "RESUME_INTENTIO" });
+  refreshPauseStatus();
+});
+
 // ── Backup & Restore ────────────────────────────────────────────
 
 document.getElementById("export-btn").addEventListener("click", async () => {
@@ -926,4 +972,5 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   showQuestionsTab("tree");
   renderDomains();
+  refreshPauseStatus();
 });

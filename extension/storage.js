@@ -81,6 +81,32 @@ export function clearLog() {
   });
 }
 
+// Returns the full pause log (from the Settings page's "Pause Intentio"
+// button), or [] if nothing has been stored yet.
+export function getPauseLog() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("pauseLog", ({ pauseLog }) => {
+      resolve(pauseLog ?? []);
+    });
+  });
+}
+
+// Appends one { timestamp, minutes, reason } entry to the pause log.
+export async function appendPauseLog(entry) {
+  const pauseLog = await getPauseLog();
+  pauseLog.push(entry);
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ pauseLog }, resolve);
+  });
+}
+
+// Clears the entire pause log.
+export function clearPauseLog() {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ pauseLog: [] }, resolve);
+  });
+}
+
 // User-arranged log view state: column order/widths and table (branch group)
 // order/collapse. Purely presentational — never affects grouping logic.
 export const DEFAULT_LOG_VIEW_PREFS = {
@@ -108,18 +134,26 @@ export function saveLogViewPrefs(prefs) {
 }
 
 // Bundles everything a reinstall/transfer needs to restore state: questions,
-// always-allowed sites (inside config), the redirect log, and how the log
-// view is arranged.
+// always-allowed sites (inside config), the redirect log, how the log view
+// is arranged, and the pause log.
 export async function exportAllData() {
-  const [config, log, logViewPrefs] = await Promise.all([getConfig(), getLog(), getLogViewPrefs()]);
-  return { config, log, logViewPrefs };
+  const [config, log, logViewPrefs, pauseLog] = await Promise.all([
+    getConfig(), getLog(), getLogViewPrefs(), getPauseLog(),
+  ]);
+  return { config, log, logViewPrefs, pauseLog };
 }
 
-// Overwrites config, log, and log view prefs with previously exported data.
-export function importAllData({ config, log, logViewPrefs }) {
+// Overwrites config, log, log view prefs, and the pause log with previously
+// exported data.
+export function importAllData({ config, log, logViewPrefs, pauseLog }) {
   return new Promise((resolve) => {
     chrome.storage.local.set(
-      { config, log: log ?? [], logViewPrefs: { ...DEFAULT_LOG_VIEW_PREFS, ...(logViewPrefs ?? {}) } },
+      {
+        config,
+        log: log ?? [],
+        logViewPrefs: { ...DEFAULT_LOG_VIEW_PREFS, ...(logViewPrefs ?? {}) },
+        pauseLog: pauseLog ?? [],
+      },
       resolve,
     );
   });

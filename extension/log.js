@@ -1,4 +1,4 @@
-import { getLog, clearLog, getConfig, getLogViewPrefs, saveLogViewPrefs } from "./storage.js";
+import { getLog, clearLog, getConfig, getLogViewPrefs, saveLogViewPrefs, getPauseLog, clearPauseLog } from "./storage.js";
 
 // Renders record.grantScope as a human-readable description.
 // "tab-once"        -> one-time pass for that tab (current format)
@@ -440,8 +440,55 @@ function renderTable(records, descriptors, columnWidths, activeSort, { onReorder
   return wrap;
 }
 
+// Renders the "Pauses" history (from the Settings page's "Pause Intentio"
+// button) as a plain table — kept independent of the redirect log's
+// grouping/column/sort machinery above, since it's a much simpler,
+// unrelated record shape ({ timestamp, minutes, reason }).
+async function renderPauseLog() {
+  const pauseLog = await getPauseLog();
+  const table = document.getElementById("pause-table");
+  const body = document.getElementById("pause-body");
+  const emptyMsg = document.getElementById("pause-empty-msg");
+
+  body.innerHTML = "";
+
+  if (pauseLog.length === 0) {
+    table.style.display = "none";
+    emptyMsg.style.display = "";
+    return;
+  }
+
+  table.style.display = "";
+  emptyMsg.style.display = "none";
+
+  [...pauseLog].reverse().forEach((entry) => {
+    const tr = document.createElement("tr");
+
+    const tdTime = document.createElement("td");
+    tdTime.textContent = new Date(entry.timestamp).toLocaleString();
+    tr.appendChild(tdTime);
+
+    const tdMinutes = document.createElement("td");
+    tdMinutes.textContent = `${entry.minutes} min`;
+    tr.appendChild(tdMinutes);
+
+    const tdReason = document.createElement("td");
+    tdReason.textContent = entry.reason;
+    tr.appendChild(tdReason);
+
+    body.appendChild(tr);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("settings-link").href = chrome.runtime.getURL("settings.html");
+
+  document.getElementById("clear-pauses-btn").addEventListener("click", async () => {
+    if (!confirm("Clear the entire pause log? This cannot be undone.")) return;
+    await clearPauseLog();
+    renderPauseLog();
+  });
+  renderPauseLog();
 
   const container = document.getElementById("log-container");
 

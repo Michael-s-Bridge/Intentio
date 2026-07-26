@@ -176,6 +176,21 @@
     </div>
     <p id="empty-msg" style="display:none; color:#666;">No redirects logged yet.</p>
     <div id="log-container"></div>
+
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin:3rem 0 0.5rem;">
+      <h1 style="margin:0; font-size:1.25rem;">Pauses</h1>
+      <button id="clear-pauses-btn" style="font-size:0.8rem; padding:0.3rem 0.75rem; cursor:pointer; border:1px solid #ddd; border-radius:4px; background:#fff; color:#666;">Clear pause log</button>
+    </div>
+    <p id="pause-empty-msg" style="display:none; color:#666;">No pauses logged yet.</p>
+    <div class="table-scroll">
+      <table id="pause-table" style="display:none;">
+        <thead>
+          <tr><th>Time</th><th>Duration</th><th>Reason</th></tr>
+        </thead>
+        <tbody id="pause-body"></tbody>
+      </table>
+    </div>
+
     <script type="module" src="log.js"></script>
   </body>
 </html>

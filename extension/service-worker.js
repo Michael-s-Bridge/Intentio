@@ -1,5 +1,5 @@
-import { buildBlockingRules, registerAllowOnce, registerTempAllow, removeSessionRule } from "./rules.js";
-import { DEFAULT_CONFIG } from "./storage.js";
+import { buildBlockingRules, registerAllowOnce, registerTempAllow, registerPauseAllow, removeSessionRule } from "./rules.js";
+import { DEFAULT_CONFIG, appendPauseLog } from "./storage.js";
 import { HISTORY_GRACE_MS } from "./constants.js";
 
 // Returns true if the URL matches any always-allowed entry.
@@ -32,6 +32,38 @@ async function isTempAllowed(url, tabId) {
     const p = entry.hostname.toLowerCase();
     return hostname === p || hostname.endsWith(`.${p}`);
   });
+}
+
+// Whether Intentio is currently paused (the Settings page's "Pause
+// Intentio" button) — every redirect path needs to respect this, not just
+// the declarativeNetRequest rules: the stale-tab check and the SPA
+// history-state check below both redirect directly via chrome.tabs.update,
+// bypassing declarativeNetRequest entirely.
+async function isPaused() {
+  const { pauseUntil } = await chrome.storage.session.get("pauseUntil");
+  return typeof pauseUntil === "number" && pauseUntil > Date.now();
+}
+
+// Ends the current pause (if any): removes its allow-all session rule,
+// clears its alarm, and clears the session state. Safe to call when no
+// pause is active.
+async function clearPause() {
+  const { pauseRuleId } = await chrome.storage.session.get("pauseRuleId");
+  if (typeof pauseRuleId === "number") await removeSessionRule(pauseRuleId);
+  await chrome.storage.session.remove(["pauseUntil", "pauseRuleId", "pauseReason"]);
+  chrome.alarms.clear("pauseIntentio");
+}
+
+// Starts (or replaces) a pause: registers the allow-all session rule,
+// schedules its expiry, and logs the reason. Returns the timestamp it ends.
+async function startPause(minutes, reason) {
+  await clearPause(); // replace any existing pause rather than stacking
+  const ruleId = await registerPauseAllow();
+  const until = Date.now() + minutes * 60 * 1000;
+  await chrome.storage.session.set({ pauseUntil: until, pauseRuleId: ruleId, pauseReason: reason });
+  chrome.alarms.create("pauseIntentio", { when: until });
+  await appendPauseLog({ timestamp: Date.now(), minutes, reason });
+  return until;
 }
 
 // Reads the active whitelist from cfg and installs fresh dynamic rules.
@@ -100,6 +132,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
 
   const { url, tabId } = details;
   if (!url?.startsWith("http")) return;
+  if (await isPaused()) return;
 
   const graceKey = `tab_nav_grace_${tabId}`;
   const stored = await chrome.storage.session.get(graceKey);
@@ -150,6 +183,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
 // redirect it to the interrupt page — even though no navigation is happening.
 // This catches tabs left open and forgotten rather than actively navigated to.
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+  if (await isPaused()) return;
+
   let tab;
   try { tab = await chrome.tabs.get(tabId); }
   catch { return; } // tab may have closed between the event and the get
@@ -209,8 +244,10 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   }
 });
 
-// Message handler: interrupt page sends ALLOW_ONCE or ALLOW_TEMP before navigating.
-// Return true to keep the message channel open for the async response.
+// Message handler: interrupt page sends ALLOW_ONCE or ALLOW_TEMP before
+// navigating; the Settings page sends PAUSE_INTENTIO / RESUME_INTENTIO /
+// GET_PAUSE_STATUS for the "Pause Intentio" button. Return true to keep the
+// message channel open for the async response.
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "ALLOW_ONCE" && typeof message.tabId === "number") {
     registerAllowOnce(message.tabId)
@@ -242,12 +279,46 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     })();
     return true;
   }
+
+  if (message.type === "PAUSE_INTENTIO" && typeof message.minutes === "number" && message.reason) {
+    startPause(message.minutes, message.reason)
+      .then((until) => sendResponse({ ok: true, until }))
+      .catch((err) => {
+        console.error("startPause failed:", err);
+        sendResponse({ ok: false, error: err.message });
+      });
+    return true;
+  }
+
+  if (message.type === "RESUME_INTENTIO") {
+    clearPause()
+      .then(() => sendResponse({ ok: true }))
+      .catch((err) => {
+        console.error("clearPause failed:", err);
+        sendResponse({ ok: false, error: err.message });
+      });
+    return true;
+  }
+
+  if (message.type === "GET_PAUSE_STATUS") {
+    chrome.storage.session.get(["pauseUntil", "pauseReason"]).then(({ pauseUntil, pauseReason }) => {
+      const active = typeof pauseUntil === "number" && pauseUntil > Date.now();
+      sendResponse({ active, until: active ? pauseUntil : null, reason: active ? pauseReason : null });
+    });
+    return true;
+  }
 });
 
 // When a temporary-allow grant's timer fires, remove its session rule and
 // drop it from storage. chrome.alarms persists across service worker sleep,
 // so this fires reliably even if the worker was asleep when it was due.
+// The pause alarm is handled the same way, via clearPause().
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === "pauseIntentio") {
+    await clearPause();
+    return;
+  }
+
   if (!alarm.name.startsWith("tempAllow_")) return;
   const ruleId = Number(alarm.name.slice("tempAllow_".length));
 
