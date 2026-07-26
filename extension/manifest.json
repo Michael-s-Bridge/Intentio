@@ -19,7 +19,7 @@
   "host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     {
-      "resources": ["interrupt.html", "interrupt.js", "log.html", "log.js", "settings.html", "settings.js"],
+      "resources": ["interrupt.html", "interrupt.js"],
       "matches": ["<all_urls>"]
     }
   ],
