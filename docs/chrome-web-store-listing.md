@@ -49,10 +49,20 @@ Productivity
 The dashboard asks for a short justification for each sensitive permission. Suggested answers:
 
 **Host permissions (`<all_urls>`)**
-> Intentio needs to see the destination URL of any page you navigate to, on
-> any site, in order to decide whether that navigation should be
-> interrupted with a re-anchoring prompt. It only reads the URL for this
-> comparison — it does not read page content.
+> Intentio interrupts navigation to any site the user hasn't explicitly
+> allowed, so it has to see the destination URL of every navigation to
+> decide whether it's on that (small, user-configurable) allow-list — it
+> only reads the URL for this comparison, never page content.
+>
+> Neither narrower alternative fits this use case: `activeTab` only grants
+> access after an explicit user gesture on the extension itself, but
+> Intentio has to react automatically the instant a navigation happens,
+> with no gesture to hook into. And a fixed `host_permissions` list would
+> only cover traffic *to* those named sites — the opposite of what's
+> needed, since Intentio's entire purpose is catching navigation to
+> whatever site *isn't* already on the user's list, which is unbounded by
+> definition. `<all_urls>` is the minimum permission this feature can work
+> with, not a broader-than-necessary shortcut.
 
 **`tabs`**
 > Used to read a tab's current URL (to catch a tab left open and forgotten
