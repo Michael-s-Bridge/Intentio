@@ -21,8 +21,8 @@ submission form. Paste/adapt as needed; not part of the extension bundle.
 > **How it works**
 > - Define an always-allowed list of sites that never interrupt you.
 > - Customize the questions asked on every interrupt, including Yes/No
->   questions that branch into follow-up questions — edit them as a simple
->   list or as a visual flowchart.
+>   questions that branch into follow-up questions — edit them as a visual flowchart or as a simple
+>   list.
 > - A redirect log records what you were redirected from, what you
 >   answered, and whether you stayed on track — viewable, sortable, and
 >   exportable at any time.
@@ -79,9 +79,11 @@ The dashboard asks for a short justification for each sensitive permission. Sugg
 > for 30 minutes") and the "Pause Intentio" feature, so they end reliably
 > even if the extension's background process was asleep when they were due.
 
-## Screenshots to prepare
+## Screenshots
 
-Chrome wants at least one, 1280×800 or 640×400. Good candidates:
-- The interrupt page mid-question
-- The Settings page's flowchart view showing a branching question set
-- The Log page showing a populated redirect log
+Chrome requires exactly 1280×800 or 640×400 (an 8:5 ratio) per screenshot.
+
+- `screenshots/interrupt-page.png` — the interrupt page mid-question, 1280×800, ready to upload. The original was portrait (570×964), so it's centered on a white canvas with padding on both sides rather than cropped or stretched — legible, but with a fair amount of white space either side. Worth retaking in a wider window if a tighter fill is wanted later.
+- `screenshots/flowchart-view.png` — the Settings page's flowchart view showing a branching (and converging) question set, 1280×800, ready to upload. Only thin padding top/bottom since the original was already close to the target ratio.
+
+Still worth adding: the Log page showing a populated redirect log.
